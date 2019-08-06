@@ -3,6 +3,7 @@
 namespace Aerys;
 
 use Amp\Loop;
+use Monolog\Formatter\FormatterInterface;
 
 class IpcLogger extends Logger {
     use \Amp\CallableMaker;
@@ -15,7 +16,8 @@ class IpcLogger extends Logger {
     private $writeBuffer = "";
     private $isDead;
 
-    public function __construct(Console $console, $ipcSock) {
+    public function __construct(Console $console, FormatterInterface $formatter, $ipcSock) {
+        $this->formatter = $formatter;
         $this->setAnsify($console->getArg("color"));
         $level = $console->getArg("log");
         $level = isset(self::LEVELS[$level]) ? self::LEVELS[$level] : $level;
