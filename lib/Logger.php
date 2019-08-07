@@ -27,6 +27,7 @@ abstract class Logger implements PsrLogger {
 
     private $outputLevel = self::LEVELS[self::DEBUG];
     private $ansify = true;
+    protected $formatter;
 
     abstract protected function output(string $message);
 
@@ -64,27 +65,18 @@ abstract class Logger implements PsrLogger {
 
     final public function log($level, $message, array $context = []) {
         if ($this->canEmit($level)) {
-            $message = $this->format($level, $message, $context);
+            $message = $this->formatter->format([
+                'message' => $message,
+                'context' => $context,
+                'datetime' => new \DateTimeImmutable('now'),
+                'level' => \Monolog\Logger::toMonologLevel($level),
+                'level_name' => $level,
+                'channel' => 'common',
+                'extra' => [],
+            ]);
+
             return $this->output($message);
         }
-    }
-
-    private function format($level, $message, array $context = []) {
-        $time = @date("Y-m-d H:i:s", $context["time"] ?? time());
-        $level = isset(self::LEVELS[$level]) ? $level : "unknown";
-        $level = $this->ansify ? $this->ansify($level) : "$level:";
-
-        foreach ($context as $key => $replacement) {
-            // avoid invalid casts to string
-            if (!is_array($replacement) && (!is_object($replacement) || method_exists($replacement, '__toString'))) {
-                $replacements["{{$key}}"] = $replacement;
-            }
-        }
-        if (isset($replacements)) {
-            $message = strtr($message, $replacements);
-        }
-
-        return "[{$time}] {$level} {$message}";
     }
 
     private function ansify($level) {
